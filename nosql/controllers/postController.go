@@ -3,12 +3,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	database "test/db"
 	"test/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -37,9 +39,9 @@ func SeeAllPosts() gin.HandlerFunc {
 func SeeSinglePost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		a, _ := c.Params.Get("title")
-		fmt.Println(a)
-		x, _ := FindOnePost(ctx, a)
+		a, _ := c.Params.Get("id")
+		oid, _ := primitive.ObjectIDFromHex(a)
+		x, _ := FindOnePost(ctx, oid)
 		c.JSON(200, x)
 		defer cancel()
 	}
@@ -58,14 +60,17 @@ func CreateUserPost() gin.HandlerFunc {
 			return
 		}
 
-		post1 := models.Post{
+		log.Println(requestBody)
+
+		post := models.Post{
 			Username: requestBody.Username,
 			Title:    requestBody.Title,
 			Text:     requestBody.Text,
 			Comment:  g,
 			Tags:     requestBody.Tags,
+			Date:     time.Now(),
 		}
-		_, insertErr := postCollection.InsertOne(ctx, post1)
+		_, insertErr := postCollection.InsertOne(ctx, post)
 		if insertErr != nil {
 			msg := fmt.Sprintf("Post item was not created")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
@@ -74,7 +79,7 @@ func CreateUserPost() gin.HandlerFunc {
 		defer cancel()
 
 		resultText := fmt.Sprintf("successfully created a post")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": resultText})
+		c.JSON(http.StatusOK, gin.H{"message": resultText})
 	}
 }
 

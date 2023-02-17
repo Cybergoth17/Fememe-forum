@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var userCollection *mongo.Collection = db.OpenCollection(db.Client, "user")
@@ -83,7 +84,8 @@ func FindOne(ctx context.Context, username string) (u models.User, e error) {
 
 func FindAllPost(ctx context.Context) (u []models.Post, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
-	result, err := postCollection.Find(ctx, bson.M{})
+	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
+	result, err := postCollection.Find(ctx, bson.M{}, opts)
 	if result.Err() != nil {
 		return u, fmt.Errorf("failed to find posts")
 	}
@@ -95,22 +97,22 @@ func FindAllPost(ctx context.Context) (u []models.Post, e error) {
 	return u, nil
 }
 
-func FindOnePost(ctx context.Context, title string) (u models.Post, e error) {
+func FindOnePost(ctx context.Context, id primitive.ObjectID) (u models.Post, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
-	result := postCollection.FindOne(ctx, bson.M{"title": title}).Decode(&u)
+	result := postCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
 	fmt.Println(result)
 	fmt.Println(u)
 	return u, nil
 }
 
-func DeleteById(ctx context.Context, id string)(a int64, e error){
+func DeleteById(ctx context.Context, id string) (a int64, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		fmt.Println("primitive.ObjectIDFromHex ERROR:", err)
 		return 0, err
-	} 
-	res, err:= postCollection.DeleteOne(ctx, bson.M{"_id": idPrimitive})
+	}
+	res, err := postCollection.DeleteOne(ctx, bson.M{"_id": idPrimitive})
 	fmt.Println(id)
 	if err != nil {
 		fmt.Println(err)
@@ -119,14 +121,14 @@ func DeleteById(ctx context.Context, id string)(a int64, e error){
 	return res.DeletedCount, nil
 }
 
-func UpdateById(ctx context.Context, id string, text string)(a int64, e error){
+func UpdateById(ctx context.Context, id string, text string) (a int64, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		fmt.Println("primitive.ObjectIDFromHex ERROR:", err)
 		return 0, err
-	} 
-	res, err:= postCollection.UpdateOne(ctx, bson.M{"_id": idPrimitive},  
+	}
+	res, err := postCollection.UpdateOne(ctx, bson.M{"_id": idPrimitive},
 		bson.D{{Key: "$set", Value: bson.D{{Key: "text", Value: text}}}})
 	if err != nil {
 		fmt.Println(err)

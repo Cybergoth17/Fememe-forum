@@ -22,10 +22,11 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.GET("/readid/:username", controllers.ReadUserById())
 
 	incomingRoutes.GET("/api/posts", controllers.SeeAllPosts())
-	incomingRoutes.GET("/api/posts/:title", controllers.SeeSinglePost())
+	incomingRoutes.GET("/api/posts/:id", controllers.SeeSinglePost())
 	incomingRoutes.POST("/api/posts", controllers.CreateUserPost())
 	incomingRoutes.DELETE("/api/posts/:id", controllers.DeletePost())
 	incomingRoutes.PUT("/api/posts/:id", controllers.UpdatePost())
+
 	incomingRoutes.POST("/users/signup", controllers.Signup())
 	incomingRoutes.POST("/users/login", controllers.Login())
 	incomingRoutes.GET("/users/signup", func(context *gin.Context) {
