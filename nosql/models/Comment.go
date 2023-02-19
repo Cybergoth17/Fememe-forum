@@ -12,4 +12,5 @@ type Comment struct {
 	Date     time.Time          `json:"date" validate:"required" bson:"date"`
 	Username string             `json:"username"`
 	PostID   primitive.ObjectID `json:"post_id" validate:"required" bson:"post_id"`
+	Avatar   string             `json:"avatar" validate:"required" bson:"avatar"`
 }

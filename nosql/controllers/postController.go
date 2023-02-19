@@ -29,6 +29,7 @@ type CreatePostBody struct {
 type CreateCommentBody struct {
 	Username string
 	Text     string
+	Avatar   string
 }
 
 type UpdatePostBody struct {
@@ -224,6 +225,7 @@ func CreateComment() gin.HandlerFunc {
 			Date:     time.Now(),
 			Username: requestBody.Username,
 			PostID:   post.ID,
+			Avatar:   requestBody.Avatar,
 		}
 
 		commentInsertRes, err := commentCollection.InsertOne(ctx, comment)
