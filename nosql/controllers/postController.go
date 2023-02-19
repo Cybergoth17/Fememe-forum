@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"test/db"
 	database "test/db"
 	"test/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -21,6 +23,11 @@ type CreatePostBody struct {
 	Title    string
 	Text     string
 	Tags     []string
+}
+
+type CreateCommentBody struct {
+	Username string
+	Text     string
 }
 
 type UpdatePostBody struct {
@@ -133,5 +140,47 @@ func UpdatePost() gin.HandlerFunc {
 		defer cancel()
 		resultText := fmt.Sprintf("successfully updated %v post", modifiedCount)
 		c.JSON(http.StatusOK, gin.H{"message": resultText})
+	}
+}
+
+func CreateComment() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comment")
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var requestBody CreateCommentBody
+
+		if err := c.BindJSON(&requestBody); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		id, _ := c.Params.Get("id")
+		oid, _ := primitive.ObjectIDFromHex(id)
+		post, err := FindOnePost(ctx, oid)
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		comment := models.Comment{
+			Text:     requestBody.Text,
+			Date:     time.Now(),
+			Username: requestBody.Username,
+		}
+		commentInsertRes, err := commentCollection.InsertOne(ctx, comment)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		var createdComment models.Comment
+		err = commentCollection.FindOne(ctx, bson.M{"_id": commentInsertRes.InsertedID}).Decode(&createdComment)
+
+		post.Comment = append(post.Comment, createdComment)
+		postCollection.UpdateOne(ctx, bson.M{"_id": post.ID}, post)
+
+		defer cancel()
+		c.JSON(http.StatusOK, gin.H{"message": "successfull created comment"})
 	}
 }

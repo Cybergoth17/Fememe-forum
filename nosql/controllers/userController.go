@@ -16,6 +16,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+
+type CreateUserBody struct {
+	Username string
+	Email    string
+	Password string
+}
+
+type LoginBody struct {
+	Email    string
+	Password string
+}
+
 func ReadUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		//x, _ := FindUserPosts(context.Background(), a)
@@ -64,13 +76,18 @@ var validate = validator.New()
 func Signup() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		var s = c.PostForm("username")
-		var a = c.PostForm("password")
-		var x = c.PostForm("email")
+		var requestBody CreateUserBody
+
+		if err := c.BindJSON(&requestBody); err != nil {
+			fmt.Println(err)
+			return
+		}
+
+
 		user := models.User{
-			Username: &s,
-			Password: &a,
-			Email:    &x,
+			Username: &requestBody.Username,
+			Password: &requestBody.Password,
+			Email:    &requestBody.Email,
 		}
 
 		validationErr := validate.Struct(user)
@@ -99,16 +116,15 @@ func Signup() gin.HandlerFunc {
 		user.Token = &token
 		user.Refresh_token = &refreshToken
 
-		resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
+		_, insertErr := userCollection.InsertOne(ctx, user)
 		if insertErr != nil {
 			msg := fmt.Sprintf("User item was not created")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
 		defer cancel()
-		c.SetCookie("username", *user.Username, 3600, "/", "localhost", false, false)
-		fmt.Println(resultInsertionNumber)
 
+		c.JSON(http.StatusOK, gin.H{"token": token, "user": user})
 	}
 
 }
@@ -138,11 +154,16 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 func Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		var s = c.PostForm("email")
-		var a = c.PostForm("password")
+		var requestBody LoginBody
+
+		if err := c.BindJSON(&requestBody); err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		user := models.User{
-			Email:    &s,
-			Password: &a,
+			Email:    &requestBody.Email,
+			Password: &requestBody.Password,
 		}
 		var foundUser models.User
 
@@ -155,7 +176,7 @@ func Login() gin.HandlerFunc {
 
 		passwordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password)
 		defer cancel()
-		if passwordIsValid != true {
+		if !passwordIsValid {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
@@ -163,11 +184,7 @@ func Login() gin.HandlerFunc {
 		token, refreshToken, _ := helpers.GenerateAllTokens(*foundUser.Email, *foundUser.Username)
 
 		helpers.UpdateAllTokens(token, refreshToken, *foundUser.Email)
-		c.SetCookie("token", refreshToken, 3600, "/", "localhost", false, false)
-		c.SetCookie("username", *foundUser.Username, 3600, "/", "localhost", false, false)
-
-		c.Redirect(303, "/read")
-
+		c.JSON(http.StatusOK, gin.H{"token": token, "user": foundUser})
 	}
 }
 func Logout() gin.HandlerFunc {
@@ -175,5 +192,20 @@ func Logout() gin.HandlerFunc {
 		c.SetCookie("username", "expired", -1, "/", "localhost", false, false)
 		c.SetCookie("token", "expiredToken", -1, "/", "localhost", false, false)
 		c.Redirect(http.StatusFound, "/read")
+	}
+}
+
+func SeeAllUsers() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		result, _ := userCollection.Find(ctx, bson.M{})
+		var u []models.User
+	
+		err := result.All(ctx, &u)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn't find users"})
+		}
+		c.JSON(200, gin.H{"users": u})
+		defer cancel()
 	}
 }

@@ -1,11 +1,12 @@
 package routes
 
 import (
-	_ "go.mongodb.org/mongo-driver/bson"
-	_ "go.mongodb.org/mongo-driver/mongo"
 	"net/http"
 	"test/controllers"
 	_ "test/db"
+
+	_ "go.mongodb.org/mongo-driver/bson"
+	_ "go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,14 +28,10 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/api/posts", controllers.CreateUserPost())
 	incomingRoutes.DELETE("/api/posts/:id", controllers.DeletePost())
 	incomingRoutes.PUT("/api/posts/:id", controllers.UpdatePost())
+	incomingRoutes.POST("/api/posts/comment/:id", controllers.CreateComment())
 
 	incomingRoutes.POST("/users/signup", controllers.Signup())
 	incomingRoutes.POST("/users/login", controllers.Login())
-	incomingRoutes.GET("/users/signup", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "testRegister.html", gin.H{})
-	})
-	incomingRoutes.GET("/users/login", func(context *gin.Context) {
-		context.HTML(http.StatusOK, "login.html", gin.H{})
-	})
 	incomingRoutes.GET("/users/signout", controllers.Logout())
+	incomingRoutes.GET("/users", controllers.SeeAllUsers())
 }
