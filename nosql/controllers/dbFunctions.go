@@ -99,9 +99,12 @@ func FindAllPost(ctx context.Context) (u []models.Post, e error) {
 
 func FindOnePost(ctx context.Context, id primitive.ObjectID) (u models.Post, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
-	result := postCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
-	fmt.Println(result)
-	fmt.Println(u)
+	err := postCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
+
+	if err != nil {
+		return u, err
+	}
+
 	return u, nil
 }
 

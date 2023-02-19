@@ -3,21 +3,22 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"test/helpers"
 	"test/models"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-
 type CreateUserBody struct {
+	Avatar   string
 	Username string
 	Email    string
 	Password string
@@ -83,11 +84,11 @@ func Signup() gin.HandlerFunc {
 			return
 		}
 
-
 		user := models.User{
 			Username: &requestBody.Username,
 			Password: &requestBody.Password,
 			Email:    &requestBody.Email,
+			Avatar:   &requestBody.Avatar,
 		}
 
 		validationErr := validate.Struct(user)
@@ -200,7 +201,7 @@ func SeeAllUsers() gin.HandlerFunc {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		result, _ := userCollection.Find(ctx, bson.M{})
 		var u []models.User
-	
+
 		err := result.All(ctx, &u)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn't find users"})

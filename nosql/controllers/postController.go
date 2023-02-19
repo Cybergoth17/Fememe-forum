@@ -23,6 +23,7 @@ type CreatePostBody struct {
 	Title    string
 	Text     string
 	Tags     []string
+	Avatar   string
 }
 
 type CreateCommentBody struct {
@@ -83,6 +84,7 @@ func CreateUserPost() gin.HandlerFunc {
 
 		post := models.Post{
 			Username: requestBody.Username,
+			Avatar:   requestBody.Avatar,
 			Title:    requestBody.Title,
 			Text:     requestBody.Text,
 			Comment:  g,
@@ -143,9 +145,62 @@ func UpdatePost() gin.HandlerFunc {
 	}
 }
 
+func SeeAllComments() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
+		result, _ := commentCollection.Find(ctx, bson.M{})
+		var u []models.Comment
+
+		err := result.All(ctx, &u)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn't find comments"})
+		}
+		c.JSON(200, u)
+		defer cancel()
+	}
+}
+
+func SeeAllCommentsByPostId() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
+		id, _ := c.Params.Get("id")
+		oid, _ := primitive.ObjectIDFromHex(id)
+		result, _ := commentCollection.Find(ctx, bson.M{"post_id": oid})
+		var u []models.Comment
+
+		err := result.All(ctx, &u)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "couldn't find comments"})
+		}
+		c.JSON(200, u)
+		defer cancel()
+	}
+}
+
+func DeleteComment() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		id, _ := c.Params.Get("id")
+		oid, _ := primitive.ObjectIDFromHex(id)
+		deleteRes, err := commentCollection.DeleteOne(ctx, bson.M{"_id": oid})
+		if err != nil {
+			msg := fmt.Sprintf("User post doesn't exist")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		defer cancel()
+		resultText := fmt.Sprintf("successfully deleted %v post", deleteRes.DeletedCount)
+		c.JSON(http.StatusOK, gin.H{"message": resultText})
+
+	}
+}
+
 func CreateComment() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comment")
+		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		var requestBody CreateCommentBody
 
@@ -164,21 +219,35 @@ func CreateComment() gin.HandlerFunc {
 		}
 
 		comment := models.Comment{
+			ID:       primitive.NewObjectID(),
 			Text:     requestBody.Text,
 			Date:     time.Now(),
 			Username: requestBody.Username,
+			PostID:   post.ID,
 		}
+
 		commentInsertRes, err := commentCollection.InsertOne(ctx, comment)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
+		log.Println("Inserted ID", commentInsertRes.InsertedID)
 
 		var createdComment models.Comment
 		err = commentCollection.FindOne(ctx, bson.M{"_id": commentInsertRes.InsertedID}).Decode(&createdComment)
 
-		post.Comment = append(post.Comment, createdComment)
-		postCollection.UpdateOne(ctx, bson.M{"_id": post.ID}, post)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		newCommentArr := append(post.Comment, createdComment)
+		result := postCollection.FindOneAndUpdate(ctx, bson.M{"_id": post.ID}, bson.D{{"$set", bson.D{{"comments", newCommentArr}}}})
+
+		if result.Err() != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
 
 		defer cancel()
 		c.JSON(http.StatusOK, gin.H{"message": "successfull created comment"})
