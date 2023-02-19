@@ -23,6 +23,7 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 
 	incomingRoutes.GET("/api/posts", controllers.SeeAllPosts())
 	incomingRoutes.GET("/api/posts/:id", controllers.SeeSinglePost())
+	incomingRoutes.GET("/api/posts/user/:username", controllers.SeePostsByUsername())
 	incomingRoutes.POST("/api/posts", controllers.CreateUserPost())
 	incomingRoutes.DELETE("/api/posts/:id", controllers.DeletePost())
 	incomingRoutes.PUT("/api/posts/:id", controllers.UpdatePost())

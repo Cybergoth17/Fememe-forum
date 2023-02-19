@@ -47,6 +47,18 @@ func SeeSinglePost() gin.HandlerFunc {
 	}
 }
 
+func SeePostsByUsername() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		a, _ := c.Params.Get("username")
+		log.Println(a)
+
+		x, _ := FindPostsByUsername(ctx, a)
+		c.JSON(200, x)
+		defer cancel()
+	}
+}
+
 func CreateUserPost() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
@@ -95,7 +107,7 @@ func DeletePost() gin.HandlerFunc {
 		}
 		defer cancel()
 		resultText := fmt.Sprintf("successfully deleted %v post", deletedCount)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": resultText})
+		c.JSON(http.StatusOK, gin.H{"message": resultText})
 
 	}
 }
@@ -120,6 +132,6 @@ func UpdatePost() gin.HandlerFunc {
 		}
 		defer cancel()
 		resultText := fmt.Sprintf("successfully updated %v post", modifiedCount)
-		c.JSON(http.StatusInternalServerError, gin.H{"message": resultText})
+		c.JSON(http.StatusOK, gin.H{"message": resultText})
 	}
 }

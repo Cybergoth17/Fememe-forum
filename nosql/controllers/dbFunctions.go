@@ -105,6 +105,21 @@ func FindOnePost(ctx context.Context, id primitive.ObjectID) (u models.Post, e e
 	return u, nil
 }
 
+func FindPostsByUsername(ctx context.Context, username string) (u []models.Post, e error) {
+	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
+	opts := options.Find().SetSort(bson.D{{Key: "date", Value: -1}})
+	result, err := postCollection.Find(ctx, bson.M{"username": username}, opts)
+	if err != nil {
+		return u, fmt.Errorf("failed to find posts")
+	}
+
+	err = result.All(ctx, &u)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 func DeleteById(ctx context.Context, id string) (a int64, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
