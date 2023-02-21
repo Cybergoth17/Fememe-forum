@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"test/db"
 	database "test/db"
 	"test/models"
@@ -63,6 +64,25 @@ func SeePostsByUsername() gin.HandlerFunc {
 		log.Println(a)
 
 		x, _ := FindPostsByUsername(ctx, a)
+		c.JSON(200, x)
+		defer cancel()
+	}
+}
+
+func SeePostsByTitle() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		a, _ := c.Params.Get("title")
+		log.Println(a)
+
+		if a == "" {
+			c.JSON(400, "{message: Empty query}")
+			return
+		}
+
+		splittedQuery := strings.Split(a, "+")
+		title := strings.Join(splittedQuery, " ")
+		x, _ := FindPostsByTitle(ctx, title)
 		c.JSON(200, x)
 		defer cancel()
 	}

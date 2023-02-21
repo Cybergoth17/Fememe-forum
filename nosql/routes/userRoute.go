@@ -28,6 +28,9 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/api/posts", controllers.CreateUserPost())
 	incomingRoutes.DELETE("/api/posts/:id", controllers.DeletePost())
 	incomingRoutes.PUT("/api/posts/:id", controllers.UpdatePost())
+
+	incomingRoutes.GET("/api/posts/title/:title", controllers.SeePostsByTitle())
+
 	incomingRoutes.POST("/api/posts/comment/:id", controllers.CreateComment())
 	incomingRoutes.GET("/api/posts/comment/:id", controllers.SeeAllCommentsByPostId())
 	incomingRoutes.GET("/api/posts/comment/", controllers.SeeAllComments())
