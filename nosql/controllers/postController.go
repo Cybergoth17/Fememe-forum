@@ -18,6 +18,7 @@ import (
 )
 
 var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
+var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
 
 type CreatePostBody struct {
 	Username string
@@ -169,7 +170,6 @@ func UpdatePost() gin.HandlerFunc {
 func SeeAllComments() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
 		result, _ := commentCollection.Find(ctx, bson.M{})
 		var u []models.Comment
 

@@ -18,7 +18,6 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 		context.HTML(http.StatusOK, "inserting.html", gin.H{})
 	})
 	incomingRoutes.GET("/read", controllers.ReadUser())
-	incomingRoutes.GET("/read/:username", controllers.DeleteUser())
 	incomingRoutes.GET("/readid/:username/:newusername", controllers.UpdateUser())
 	incomingRoutes.GET("/readid/:username", controllers.ReadUserById())
 
@@ -40,4 +39,6 @@ func UserRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("/users/login", controllers.Login())
 	incomingRoutes.GET("/users/signout", controllers.Logout())
 	incomingRoutes.GET("/users", controllers.SeeAllUsers())
+	incomingRoutes.DELETE("/users/:username", controllers.DeleteUser())
+
 }

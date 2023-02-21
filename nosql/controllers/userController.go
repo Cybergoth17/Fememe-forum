@@ -40,15 +40,29 @@ func DeleteUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		a, _ := c.Params.Get("username")
-		resultInsertionNumber, insertErr := userCollection.DeleteOne(ctx, bson.M{"username": a})
-		if insertErr != nil {
-			msg := fmt.Sprintf("User item was not created")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		result, _ := FindOne(ctx, a)
+
+		_, err := postCollection.DeleteMany(ctx, bson.M{"username": result.Username})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete posts"})
+			return
+		}
+
+		_, err = commentCollection.DeleteMany(ctx, bson.M{"username": result.Username})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete comments"})
+			return
+		}
+
+		_, err = userCollection.DeleteOne(ctx, bson.M{"username": a})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete user"})
 			return
 		}
 		defer cancel()
-		fmt.Println(resultInsertionNumber)
-		c.Redirect(303, "/read")
+
+		c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+
 	}
 }
 func UpdateUser() gin.HandlerFunc {
