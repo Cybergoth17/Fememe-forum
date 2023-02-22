@@ -17,7 +17,7 @@ func DBinstance() *mongo.Client {
 	}
 
 	MongoDb := "mongodb+srv://begimbetovadana:y2BznVgXH2dj2A7B@cluster0.pq4ajbu.mongodb.net/test"
-
+// TEST COMMIT
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
 	if err != nil {
 		log.Fatal(err)
