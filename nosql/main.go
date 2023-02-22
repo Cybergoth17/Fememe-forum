@@ -21,7 +21,6 @@ func main() {
 		AllowHeaders: []string{"*"},
 		AllowMethods: []string{"GET", "POST", "DELETE", "PUT", "PATCH"},
 	}))
-	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/images", "./templates/images/")
 	routes.UserRoutes(router)
 	router.Run(":" + port)
