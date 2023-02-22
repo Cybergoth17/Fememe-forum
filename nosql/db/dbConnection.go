@@ -16,7 +16,7 @@ func DBinstance() *mongo.Client {
 		log.Fatal("Error loading .env file")
 	}
 
-	MongoDb := "mongodb+srv://CybergothNew:test_123@cluster0.wjxbouv.mongodb.net/Users?retryWrites=true&w=majority"
+	MongoDb := "mongodb+srv://begimbetovadana:y2BznVgXH2dj2A7B@cluster0.pq4ajbu.mongodb.net/test"
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDb))
 	if err != nil {
