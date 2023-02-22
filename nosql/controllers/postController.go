@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
 	"strings"
@@ -19,6 +20,40 @@ import (
 
 var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
 var commentCollection *mongo.Collection = db.OpenCollection(db.Client, "comments")
+
+func OptimizeIndexes(ctx context.Context, postCollection *mongo.Collection) error {
+	indexModels := []mongo.IndexModel{
+		{
+			Keys:    bson.M{"title": 1},
+			Options: options.Index().SetUnique(false),
+		},
+	}
+
+	for _, index := range indexModels {
+		_, err := postCollection.Indexes().CreateOne(ctx, index)
+		if err != nil {
+			return fmt.Errorf("failed to create index: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func AddCompoundIndexes(ctx context.Context, postCollection *mongo.Collection) error {
+	indexModels := []mongo.IndexModel{
+		{
+			Keys:    bson.M{"title": 1, "date": -1},
+			Options: options.Index().SetUnique(false),
+		},
+	}
+
+	_, err := postCollection.Indexes().CreateMany(ctx, indexModels)
+	if err != nil {
+		return fmt.Errorf("failed to create indexes: %v", err)
+	}
+
+	return nil
+}
 
 type CreatePostBody struct {
 	Username string
@@ -83,7 +118,7 @@ func SeePostsByTitle() gin.HandlerFunc {
 
 		splittedQuery := strings.Split(a, "+")
 		title := strings.Join(splittedQuery, " ")
-		x, _ := FindPostsByTitle(ctx, title)
+		x, _ := addindexes(ctx, title)
 		c.JSON(200, x)
 		defer cancel()
 	}

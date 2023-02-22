@@ -138,7 +138,26 @@ func FindPostsByTitle(ctx context.Context, title string) (u []models.Post, e err
 	}
 	return u, nil
 }
+func addindexes(ctx context.Context, title string) (u []models.Post, e error) {
+	postCollection := database.OpenCollection(database.Client, "post")
 
+	// Add compound indexes
+	if err := AddCompoundIndexes(ctx, postCollection); err != nil {
+		log.Fatalf("Failed to add compound indexes: %v", err)
+	}
+
+	// Optimize indexes
+	if err := OptimizeIndexes(ctx, postCollection); err != nil {
+		log.Fatalf("Failed to optimize indexes: %v", err)
+	}
+
+	// Run FindPostsByTitle function
+	u, err := FindPostsByTitle(ctx, title)
+	if err != nil {
+		log.Fatalf("Failed to find posts: %v", err)
+	}
+	return u, nil
+}
 func DeleteById(ctx context.Context, id string) (a int64, e error) {
 	var postCollection *mongo.Collection = database.OpenCollection(database.Client, "post")
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
