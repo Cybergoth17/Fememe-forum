@@ -141,10 +141,6 @@ func FindPostsByTitle(ctx context.Context, title string) (u []models.Post, e err
 func addindexes(ctx context.Context, title string) (u []models.Post, e error) {
 	postCollection := database.OpenCollection(database.Client, "post")
 
-	// Add compound indexes
-	if err := AddCompoundIndexes(ctx, postCollection); err != nil {
-		log.Fatalf("Failed to add compound indexes: %v", err)
-	}
 
 	// Optimize indexes
 	if err := OptimizeIndexes(ctx, postCollection); err != nil {
