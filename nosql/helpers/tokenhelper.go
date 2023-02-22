@@ -23,7 +23,7 @@ type SignedDetails struct {
 
 var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
 
-var SECRET_KEY string = "Almazalmaz1"
+var SECRET_KEY string = "Fememe"
 
 // GenerateAllTokens generates both teh detailed token and refresh token
 
